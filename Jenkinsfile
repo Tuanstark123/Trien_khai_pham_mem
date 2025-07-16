@@ -1,32 +1,28 @@
 pipeline {
     agent any
 
-    tools {
-        dotnet 'dotnet7' // hoặc dotnet6 nếu bạn dùng .NET 6, tên này phải khớp với Jenkins config
-    }
-
     stages {
-        stage('Restore Dependencies') {
+        stage('Restore') {
             steps {
-                sh 'dotnet restore'
+                bat 'dotnet restore' // Nếu Jenkins chạy trên Windows
             }
         }
 
         stage('Build') {
             steps {
-                sh 'dotnet build --configuration Release'
+                bat 'dotnet build --configuration Release'
             }
         }
 
-        stage('Run Tests') {
+        stage('Test') {
             steps {
-                sh 'dotnet test'
+                bat 'dotnet test'
             }
         }
 
         stage('Publish') {
             steps {
-                sh 'dotnet publish -c Release -o publish_output'
+                bat 'dotnet publish -c Release -o publish_output'
             }
         }
     }
