@@ -50,7 +50,7 @@ pipeline {
                 bat """
                 docker stop %CONTAINER_NAME% || echo No running container
                 docker rm %CONTAINER_NAME% || echo No container to remove
-                docker run -d -p 8180:80 --name %CONTAINER_NAME% %IMAGE_NAME% 
+                docker run -d -p 8180:8080 --name %CONTAINER_NAME% %IMAGE_NAME% 
                 """
             }
         }
