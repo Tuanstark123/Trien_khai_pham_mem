@@ -1,0 +1,34 @@
+﻿# Build artifacts
+bin/
+obj/
+publish_output/
+
+# User files
+*.dbmdl
+*.jfm
+*.user
+*.suo
+*.log
+
+# IDEs
+.vscode/
+.vs/
+*.sln.docstates
+
+# Node (if using frontend)
+node_modules/
+npm-debug.log
+
+# Docker/CI
+.dockerignore
+docker-compose*
+# Keep main Dockerfile
+# Dockerfile (nếu tên khác thì giữ lại)
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
