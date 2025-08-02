@@ -16,12 +16,11 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                echo 'Building Docker image for ASP.NET Core...'
-                bat """
-                    cd %PROJECT_DIR%
-                    docker build -t %IMAGE_NAME%:%VERSION% .
-                """
+    steps {
+        echo 'Building Docker image for ASP.NET Core...'
+        bat '''
+            docker build -t trien_khai_pham_mem:1.0 .
+        '''
             }
         }
 
