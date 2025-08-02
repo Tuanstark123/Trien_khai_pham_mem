@@ -27,6 +27,8 @@
   <ItemGroup>
     <Folder Include="Areas\Dashboard\Data\" />
     <Folder Include="Areas\Dashboard\Models\" />
+    <Folder Include="grafana\data\" />
+    <Folder Include="prometheus_data\" />
   </ItemGroup>
 
 </Project>
