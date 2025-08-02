@@ -2,68 +2,59 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'ecommerce-app'
-        CONTAINER_NAME = 'ecommerce-container'
-        PUBLISH_DIR = 'publish_output'
+        IMAGE_NAME = 'trien_khai_pham_mem'
+        VERSION = '1.0'
     }
 
     stages {
-        stage('Clean') {
+        stage('Clone Source Code') {
             steps {
-                bat "if exist %PUBLISH_DIR% rmdir /s /q %PUBLISH_DIR%"
+                echo 'Cloning repository...'
+                // Jenkins tự động clone khi cấu hình Git trong Job
             }
         }
 
-        stage('Restore') {
+        stage('Build Docker Image') {
             steps {
-                bat 'dotnet restore'
+                echo 'Building Docker image for ASP.NET Core...'
+                sh '''
+                    docker build -t ${IMAGE_NAME}:${VERSION} .
+                '''
             }
         }
 
-        stage('Build') {
+        stage('Clean Old Containers') {
             steps {
-                bat 'dotnet build --configuration Release'
+                echo 'Stopping & removing old containers...'
+                sh '''
+                    docker compose -f docker-compose-server.yaml down || true
+                    docker compose -f docker-compose-node.yaml down || true
+                '''
             }
         }
 
-        stage('Test') {
+        stage('Deploy Backend (ASP.NET Core)') {
             steps {
-                bat 'dotnet test'
+                echo 'Starting backend container...'
+                sh '''
+                    docker compose -f docker-compose-server.yaml up -d --build
+                '''
             }
         }
 
-        stage('Publish') {
+        stage('Deploy Frontend (NodeJS Client nếu có)') {
             steps {
-                bat "dotnet publish -c Release -o %PUBLISH_DIR%"
+                echo 'Starting frontend container...'
+                sh '''
+                    docker compose -f docker-compose-node.yaml up -d --build
+                '''
             }
         }
 
-        stage('Docker Build') {
+        stage('Done') {
             steps {
-                bat "docker build -t %IMAGE_NAME% ."
+                echo 'Deployment to local server completed!'
             }
         }
-
-        stage('Docker Run') {
-            steps {
-                // Nếu container đang chạy, dừng và xóa nó
-                bat """
-                docker stop %CONTAINER_NAME% || echo No running container
-                docker rm %CONTAINER_NAME% || echo No container to remove
-                docker run -d -p 8180:8080 --name %CONTAINER_NAME% %IMAGE_NAME% 
-                """
-            }
-        }
-
-        // Optional: Push lên Docker Hub nếu muốn
-        // stage('Docker Push') {
-        //     steps {
-        //         withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-        //             bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
-        //             bat "docker tag %IMAGE_NAME% yourdockerhub/%IMAGE_NAME%"
-        //             bat "docker push yourdockerhub/%IMAGE_NAME%"
-        //         }
-        //     }
-        // }
     }
 }
