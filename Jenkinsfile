@@ -10,15 +10,15 @@ pipeline {
         stage('Clone Source Code') {
             steps {
                 echo 'Cloning repository...'
-                // Jenkins tự động clone khi cấu hình Git trong Job
+                // Jenkins tự động clone nếu đã khai báo Git repo trong Job
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image for ASP.NET Core...'
-                sh '''
-                    docker build -t ${IMAGE_NAME}:${VERSION} .
+                bat '''
+                    docker build -t %IMAGE_NAME%:%VERSION% .
                 '''
             }
         }
@@ -26,9 +26,9 @@ pipeline {
         stage('Clean Old Containers') {
             steps {
                 echo 'Stopping & removing old containers...'
-                sh '''
-                    docker compose -f docker-compose-server.yaml down || true
-                    docker compose -f docker-compose-node.yaml down || true
+                bat '''
+                    docker compose -f docker-compose-server.yaml down || exit 0
+                    docker compose -f docker-compose-node.yaml down || exit 0
                 '''
             }
         }
@@ -36,7 +36,7 @@ pipeline {
         stage('Deploy Backend (ASP.NET Core)') {
             steps {
                 echo 'Starting backend container...'
-                sh '''
+                bat '''
                     docker compose -f docker-compose-server.yaml up -d --build
                 '''
             }
@@ -45,7 +45,7 @@ pipeline {
         stage('Deploy Frontend (NodeJS Client nếu có)') {
             steps {
                 echo 'Starting frontend container...'
-                sh '''
+                bat '''
                     docker compose -f docker-compose-node.yaml up -d --build
                 '''
             }
@@ -53,7 +53,7 @@ pipeline {
 
         stage('Done') {
             steps {
-                echo 'Deployment to local server completed!'
+                echo '🎉 Local deployment completed on Windows!'
             }
         }
     }
