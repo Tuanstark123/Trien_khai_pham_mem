@@ -1,0 +1,11 @@
+﻿global:
+  resolve_timeout: 1m
+
+route:
+  receiver: 'default'
+
+receivers:
+  - name: 'default'
+    email_configs:
+      - to: 'example@example.com'
+        send_resolved: true
