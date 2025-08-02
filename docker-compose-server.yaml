@@ -11,8 +11,6 @@
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./alert-rules:/etc/prometheus/rules
       - ./probe:/etc/prometheus/probe
-      # mount NFS Cluster
-      # - /mnt/nfs-cluster/prometheus_data:/prometheus/data
       - ./prometheus_data:/prometheus/data
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -20,7 +18,7 @@
       - --storage.tsdb.path=data/
     networks:
       - monitoring
-      
+
   alert-manager: # To send alert to telegram/discord/...
     container_name: monitoring-alert-manager
     image: prom/alertmanager
@@ -31,8 +29,6 @@
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - ./alertmanager:/etc/alertmanager
-    # environment:
-    #   - BOT_TOKEN=${BOT_TOKEN}
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
     networks:
@@ -51,11 +47,23 @@
       - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
       - ./grafana/data:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      # - ./grafana/grafana.ini:/etc/grafana/custom.ini
     env_file:
       - .grafana.secret
     networks:
       - monitoring
+
+  aspnet-app: # Thêm service cho ứng dụng ASP.NET Core
+    container_name: monitoring-aspnet-app
+    image: trien_khai_pham_mem:1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"  # Ánh xạ cổng 5000 trên host tới cổng 80 trong container
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus  # Đảm bảo Prometheus chạy trước
 
 networks:
   monitoring:
