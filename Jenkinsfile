@@ -2,68 +2,79 @@ pipeline {
     agent any
 
     environment {
-        REMOTE_USER = 'it23'
-        REMOTE_HOST = '101.99.23.156'
-        REMOTE_PORT = '22001'
-        REMOTE_PASS = credentials('ssh-password')  // Tạo credentials ID là 'ssh-password'
-        PROJECT_DIR = 'Trien_khai_pham_mem'
-        SSH_OPTIONS = '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        IMAGE_NAME = 'trien_khai_pham_mem'
+        VERSION = '1.0'
+        PROJECT_DIR = 'Trien_khai_pham_mem' // Thay tên thư mục nếu cần
     }
 
     stages {
-        stage('Deploy to Remote Server') {
+        stage('Clone Source Code') {
             steps {
-                echo 'Starting deployment to remote server...'
+                echo 'Cloning repository...'
+                // Jenkins sẽ tự động clone nếu Git repo đã được khai báo
+            }
+        }
+
+        stage('Build Docker Image') {
+    steps {
+        echo 'Building Docker image for ASP.NET Core...'
+        bat '''
+            docker build -t trien_khai_pham_mem:1.0 .
+        '''
+            }
+        }
+
+        stage('Clean Old Containers') {
+            steps {
+                echo 'Stopping & removing old containers...'
                 bat """
-                    sshpass -p %REMOTE_PASS% ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
-                    "cd %PROJECT_DIR% || git clone https://github.com/Tuanstark123/Trien_khai_pham_mem.git && cd %PROJECT_DIR% && git pull"
+                    cd %PROJECT_DIR%
+                    docker compose -f docker-compose-server.yaml down || exit 0
+                    docker compose -f docker-compose-node.yaml down || exit 0
                 """
             }
         }
 
-        stage('Clean Old Containers (Remote)') {
+        stage('Deploy Backend (ASP.NET Core)') {
             steps {
-                echo 'Stopping and removing old containers on server...'
+                echo 'Starting backend container...'
                 bat """
-                    sshpass -p %REMOTE_PASS% ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
-                    "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml down || true && docker compose -f docker-compose-node.yaml down || true"
+                    cd %PROJECT_DIR%
+                    dir
+                    if exist .grafana.secret (
+                        type .grafana.secret
+                    ) else (
+                        echo File .grafana.secret not found!
+                        exit /b 1
+                    )
+                    docker compose -f docker-compose-server.yaml up -d --build
                 """
             }
         }
 
-        stage('Run Backend (ASP.NET Core) on Server') {
+        stage('Deploy Frontend (NodeJS Client nếu có)') {
             steps {
-                echo 'Running backend container on server...'
+                echo 'Starting frontend container...'
                 bat """
-                    sshpass -p %REMOTE_PASS% ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
-                    "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml up -d --build"
+                    cd %PROJECT_DIR%
+                    docker compose -f docker-compose-node.yaml up -d --build
                 """
             }
         }
 
-        stage('Run Frontend (NodeJS) on Server') {
+        stage('Deploy Monitoring Stack (Grafana, Prometheus, etc)') {
             steps {
-                echo 'Running frontend container on server...'
+                echo 'Starting monitoring stack...'
                 bat """
-                    sshpass -p %REMOTE_PASS% ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
-                    "cd %PROJECT_DIR% && docker compose -f docker-compose-node.yaml up -d --build"
-                """
-            }
-        }
-
-        stage('Run Monitoring Stack (Grafana, Prometheus, etc) on Server') {
-            steps {
-                echo 'Running monitoring stack on server...'
-                bat """
-                    sshpass -p %REMOTE_PASS% ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
-                    "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml -f docker-compose-node.yaml up -d --build"
+                    cd %PROJECT_DIR%
+                    docker compose -f docker-compose-node.yaml -f docker-compose-server.yaml up -d --build
                 """
             }
         }
 
         stage('Done') {
             steps {
-                echo 'Remote deployment completed successfully!'
+                echo 'Local deployment completed on Windows!'
             }
         }
     }
