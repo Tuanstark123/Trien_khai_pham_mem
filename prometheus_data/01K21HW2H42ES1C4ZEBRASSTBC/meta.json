@@ -1,0 +1,17 @@
+{
+	"ulid": "01K21HW2H42ES1C4ZEBRASSTBC",
+	"minTime": 1754535264621,
+	"maxTime": 1754539200000,
+	"stats": {
+		"numSamples": 137376,
+		"numSeries": 688,
+		"numChunks": 1265
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01K21HW2H42ES1C4ZEBRASSTBC"
+		]
+	},
+	"version": 1
+}
