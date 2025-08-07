@@ -62,6 +62,16 @@ pipeline {
             }
         }
 
+        stage('Deploy Monitoring Stack (Grafana, Prometheus, etc)') {
+            steps {
+                echo 'Starting monitoring stack...'
+                bat """
+                    cd %PROJECT_DIR%
+                    docker compose -f docker-compose-node.yaml -f docker-compose-server.yaml up -d --build
+                """
+            }
+        }
+
         stage('Done') {
             steps {
                 echo 'Local deployment completed on Windows!'
