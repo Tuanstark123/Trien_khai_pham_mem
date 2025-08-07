@@ -4,6 +4,7 @@ using Ecommerce.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +42,13 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+
+// === Prometheus metrics endpoint ===
+app.UseHttpMetrics(); // Middleware để collect metrics
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapMetrics(); // Tạo endpoint /metrics
+});
 
 app.MapControllerRoute(
     name: "Dashboard",
