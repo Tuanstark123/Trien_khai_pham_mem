@@ -2,79 +2,71 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'trien_khai_pham_mem'
-        VERSION = '1.0'
-        PROJECT_DIR = 'Trien_khai_pham_mem' // Thay tên thư mục nếu cần
+        REMOTE_USER = 'it23'
+        REMOTE_HOST = '101.99.23.156'
+        REMOTE_PORT = '22001'
+        PROJECT_DIR = 'Trien_khai_pham_mem'
     }
 
     stages {
-        stage('Clone Source Code') {
+        stage('Deploy to Remote Server') {
             steps {
-                echo 'Cloning repository...'
-                // Jenkins sẽ tự động clone nếu Git repo đã được khai báo
-            }
-        }
+                echo 'Starting deployment to remote server...'
 
-        stage('Build Docker Image') {
-    steps {
-        echo 'Building Docker image for ASP.NET Core...'
-        bat '''
-            docker build -t trien_khai_pham_mem:1.0 .
-        '''
-            }
-        }
-
-        stage('Clean Old Containers') {
-            steps {
-                echo 'Stopping & removing old containers...'
                 bat """
-                    cd %PROJECT_DIR%
-                    docker compose -f docker-compose-server.yaml down || exit 0
-                    docker compose -f docker-compose-node.yaml down || exit 0
+                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    "cd %PROJECT_DIR% || git clone https://github.com/Tuanstark123/Trien_khai_pham_mem.git && cd %PROJECT_DIR% && git pull"
                 """
             }
         }
 
-        stage('Deploy Backend (ASP.NET Core)') {
+        stage('Clean Old Containers (Remote)') {
             steps {
-                echo 'Starting backend container...'
+                echo 'Stopping and removing old containers on server...'
+
                 bat """
-                    cd %PROJECT_DIR%
-                    dir
-                    if exist .grafana.secret (
-                        type .grafana.secret
-                    ) else (
-                        echo File .grafana.secret not found!
-                        exit /b 1
-                    )
-                    docker compose -f docker-compose-server.yaml up -d --build
+                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml down || true && docker compose -f docker-compose-node.yaml down || true"
                 """
             }
         }
 
-        stage('Deploy Frontend (NodeJS Client nếu có)') {
+        stage('Run Backend (ASP.NET Core) on Server') {
             steps {
-                echo 'Starting frontend container...'
+                echo 'Running backend container on server...'
+
                 bat """
-                    cd %PROJECT_DIR%
-                    docker compose -f docker-compose-node.yaml up -d --build
+                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml up -d --build"
                 """
             }
         }
 
-        stage('Deploy Monitoring Stack (Grafana, Prometheus, etc)') {
+        stage('Run Frontend (NodeJS) on Server') {
             steps {
-                echo 'Starting monitoring stack...'
+                echo 'Running frontend container on server...'
+
                 bat """
-                    cd %PROJECT_DIR%
-                    docker compose -f docker-compose-node.yaml -f docker-compose-server.yaml up -d --build
+                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    "cd %PROJECT_DIR% && docker compose -f docker-compose-node.yaml up -d --build"
+                """
+            }
+        }
+
+        stage('Run Monitoring Stack (Grafana, Prometheus, etc) on Server') {
+            steps {
+                echo 'Running monitoring stack on server...'
+
+                bat """
+                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml -f docker-compose-node.yaml up -d --build"
                 """
             }
         }
 
         stage('Done') {
             steps {
-                echo 'Local deployment completed on Windows!'
+                echo 'Remote deployment completed successfully!'
             }
         }
     }
