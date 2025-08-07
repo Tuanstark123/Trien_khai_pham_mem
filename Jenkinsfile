@@ -6,15 +6,15 @@ pipeline {
         REMOTE_HOST = '101.99.23.156'
         REMOTE_PORT = '22001'
         PROJECT_DIR = 'Trien_khai_pham_mem'
+        SSH_OPTIONS = '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
     }
 
     stages {
         stage('Deploy to Remote Server') {
             steps {
                 echo 'Starting deployment to remote server...'
-
                 bat """
-                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
                     "cd %PROJECT_DIR% || git clone https://github.com/Tuanstark123/Trien_khai_pham_mem.git && cd %PROJECT_DIR% && git pull"
                 """
             }
@@ -23,9 +23,8 @@ pipeline {
         stage('Clean Old Containers (Remote)') {
             steps {
                 echo 'Stopping and removing old containers on server...'
-
                 bat """
-                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
                     "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml down || true && docker compose -f docker-compose-node.yaml down || true"
                 """
             }
@@ -34,9 +33,8 @@ pipeline {
         stage('Run Backend (ASP.NET Core) on Server') {
             steps {
                 echo 'Running backend container on server...'
-
                 bat """
-                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
                     "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml up -d --build"
                 """
             }
@@ -45,9 +43,8 @@ pipeline {
         stage('Run Frontend (NodeJS) on Server') {
             steps {
                 echo 'Running frontend container on server...'
-
                 bat """
-                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
                     "cd %PROJECT_DIR% && docker compose -f docker-compose-node.yaml up -d --build"
                 """
             }
@@ -56,9 +53,8 @@ pipeline {
         stage('Run Monitoring Stack (Grafana, Prometheus, etc) on Server') {
             steps {
                 echo 'Running monitoring stack on server...'
-
                 bat """
-                    ssh -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
+                    ssh %SSH_OPTIONS% -p %REMOTE_PORT% %REMOTE_USER%@%REMOTE_HOST% ^
                     "cd %PROJECT_DIR% && docker compose -f docker-compose-server.yaml -f docker-compose-node.yaml up -d --build"
                 """
             }
